@@ -12,7 +12,7 @@ import cv2,os,time
 video = cv2.VideoCapture(0)
 
 LATEST_PIC = 0
-FOLDER_NAME = "auth_face"
+FOLDER_NAME = "face"
     
 
 cascade_path = "haarcascade_frontalface_default.xml"
