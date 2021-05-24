@@ -18,7 +18,7 @@ def auth():
 
 @app.route('/Auth')
 def auth_myself():
-    #open()
+    #open_the_door()
     return render_template("Authorized.html")
 
 if __name__ == '__main__':
