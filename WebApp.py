@@ -14,12 +14,12 @@ app = Flask(__name__)
 
 @app.route('/')
 def auth():
-    return render_template("Auth.html")
+    return render_template("Top.html")
 
 @app.route('/Auth')
 def auth_myself():
     #open()
-    pass
+    return render_template("Authorized.html")
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0",port=5000)
