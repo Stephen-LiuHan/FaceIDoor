@@ -1,2 +1,4 @@
 FaceIDoor_venv/
 .vscode/
+__pycache__/
+FaceIDoor.log
