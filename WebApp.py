@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, render_template
+from flask_httpauth import HTTPDigestAuth
 
 #from FaceIDoor import *
 
@@ -12,7 +13,18 @@ app = Flask(__name__)
 
 
 
+users = {
+    "User" : "FaceIDoor",
+}
+
+@auth.get_password
+def get_pw(username):
+    if username in users:
+        return users.get(username)
+    return None
+
 @app.route('/')
+@auth.login_required
 def auth():
     return render_template("Top.html")
 
