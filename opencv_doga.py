@@ -19,6 +19,9 @@ cascade_path = "haarcascade_frontalface_default.xml"
 cascade = cv2.CascadeClassifier(cascade_path)
 
 while video.isOpened():
+    
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'): break
     # フレームを読込み
     ret, frame = video.read()
 
@@ -34,15 +37,16 @@ while video.isOpened():
     if len(facerect) > 0:
         LATEST_PIC+=1
         cv2.imwrite("{folder_name}/{image_num}.jpg".format(folder_name= FOLDER_NAME, image_num=LATEST_PIC), frame)
-        time.sleep(10)
+        for i in range(100):
+            time.sleep(0.1)
+            if key == ord('q'): break
+        
+        facerect = 0  #初期化
 
 
     # フレームの描画
     cv2.imshow('frame', frame)
 
-    # qキーの押下で処理を中止
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'): break
 
     #save_frame('sample_video.mp4', 100, 'pic/'+AAA+'.jpg')
 
