@@ -58,10 +58,10 @@ def Face_Auth(face_dir):
     try:
         with open(img_url, 'r+b') as image:
             face_ids = []
-            faces = FC.face.detect_with_stream(image, detection_model="detection_03")
+            faces = FC.face.detect_with_stream(image, detection_model="detection_03") # the faces including in pic
             for face in faces:
                 face_ids.append(face.face_id)
-            results = FC.face.identify(face_ids, PERSON_GROUP_ID)
+            results = FC.face.identify(face_ids, PERSON_GROUP_ID) 
             if results :
                 for person in results:
                     if len(person.candidates) > 0:
@@ -90,14 +90,15 @@ def main(face_dir):
             if auth_result:
                 open_the_door()
             logging(auth_result)
-            time.sleep(60)
+            time.sleep(60) # API limit is one call per 60s
 
-def api_init(face_dir,auth_dir):
+def make_person_group(auth_dir):
     FC.person_group.create(person_group_id=PERSON_GROUP_ID,name=PERSON_GROUP_ID)
-    name_kind = os.listdir(path=auth_dir)
-    auth_faces = numpy.empty((len(name_kind),0))
+    name_kind = os.listdir(path=auth_dir) # define face tag
+    auth_faces = numpy.empty((len(name_kind),0)) #  auth_face[who][pic of face]
+    PG_persons =numpy.empty(0)
     for i, name in zip(range(len(name_kind)), name_kind):
-        name[i] = FC.person_group_person.create(PERSON_GROUP_ID, name)
+        PG_persons[i] = FC.person_group_person.create(PERSON_GROUP_ID, name) # make person in PG
         auth_faces[i] = [f.name for f in os.scandir(Path.joinpath(auth_dir, name)) if f.is_file()]
     for i,names in zip(range(len(auth_faces)),auth_faces):
         for face_file in names :
@@ -107,7 +108,7 @@ def api_init(face_dir,auth_dir):
                 #     csvM=csv.writer(f)
                 #     csvM.writerow(aface, face_ID["faceId"])
                 with open(face_file) as ff :
-                    FC.person_group_person.add_face_from_stream(PERSON_GROUP_ID, name[i], ff)
+                    FC.person_group_person.add_face_from_stream(PERSON_GROUP_ID, PG_persons[i], ff)
             except :
                 return
     FC.person_group.train(PERSON_GROUP_ID)
@@ -126,5 +127,5 @@ if __name__ == '__main__':
     auth_dir=os.path.join(WORKING_DIR, "auth_face")
     shutil.rmtree(face_dir)
     os.mkdir(face_dir)
-    api_init(face_dir,auth_dir)
+    make_person_group(auth_dir)
     main(face_dir=face_dir)
