@@ -28,6 +28,8 @@ def get_pw(username):
 def auth():
     return render_template("Top.html")
 
+
+@auth.login_required
 @app.route('/Auth')
 def auth_myself():
     #open_the_door()
