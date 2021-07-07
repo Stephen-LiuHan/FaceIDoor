@@ -9,7 +9,7 @@ from pathlib import Path
 from azure.cognitiveservices.vision.face import FaceClient
 from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 PERSON_GROUP_ID = "AUTHORIZEDFACE"
 
@@ -73,10 +73,10 @@ def Face_Auth(face_dir):
 
 def open_the_door():
     gpio_authorize = 17
-    # GPIO.setmode(GPIO.BCM)
-    # GPIO.setup(gpio_authorize, GPIO.OUT)
-    # GPIO.output(gpio_authorize, 1)
-    # GPIO.output(gpio_authorize, 0)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(gpio_authorize, GPIO.OUT)
+    GPIO.output(gpio_authorize, 1)
+    GPIO.output(gpio_authorize, 0)
 
 def logging(auth_result):
     with open("FaceIDoor.log", mode="a") as log:
