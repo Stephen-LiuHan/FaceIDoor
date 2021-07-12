@@ -11,10 +11,11 @@ from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.face.models import TrainingStatusType, Person
 # import RPi.GPIO as GPIO
 
-PERSON_GROUP_ID = "AUTHORIZEDFACE"
+PERSON_GROUP_ID = "authorizedface"
 
 WORKING_DIR=os.path.dirname(__file__)
 LATEST_PIC=1
+LAST_PIC=0
 EXTENSIONS=["PNG","png","jpg","jpeg","gif","BMP","bmp"]
 
 KEY = 'b58b2e93530b40c9b0f508926451c21d'
@@ -35,16 +36,19 @@ def check_dir(face_dir):
     now_files = Path(face_dir)
     if now_files is not None:
         for file_name in now_files.glob("[0-9]+.*"):
-            if os.path.splitext(os.path.join(file_name)) in EXTENSIONS:
+            if os.path.splitext(os.path.join(file_name))[-1][1:] in EXTENSIONS:
                 file_num = os.path.splitext(file_name)[0]
                 if int(file_num) > LATEST_PIC:
                     LATEST_PIC=int(file_num)
             else:
+                print(os.path.splitext(os.path.join(file_name))[-1][1:])
+                print(file_name)
                 continue
+            print(file_name)
     if NOW_PIC == LATEST_PIC:
-        return 1
-    else:
         return 0
+    else:        
+        return 1
 
 def Face_Auth(face_dir):
     """
@@ -52,9 +56,12 @@ def Face_Auth(face_dir):
     1: Authorized
     0: Failed
     """
-    
+    global LAST_PIC
+    if LAST_PIC == LATEST_PIC:
+        return 0;
     
     img_url = os.path.join(face_dir,"{PIC}.jpg".format(PIC=LATEST_PIC))
+    LAST_PIC = LATEST_PIC
     try:
         with open(img_url, 'r+b') as image:
             face_ids = []
@@ -65,6 +72,7 @@ def Face_Auth(face_dir):
             if results :
                 for person in results:
                     if len(person.candidates) > 0:
+                        print(person.candidates)
                         return 1
     except FileNotFoundError as e :
         print(e)
@@ -93,27 +101,39 @@ def main(face_dir):
             time.sleep(60) # API limit is one call per 60s
 
 def make_person_group(auth_dir):
-    FC.person_group.create(person_group_id=PERSON_GROUP_ID,name=PERSON_GROUP_ID)
+    try:
+        FC.person_group.create(person_group_id=PERSON_GROUP_ID,name=PERSON_GROUP_ID)
+    except : # azure.cognitiveservices.vision.face.models._models_py3.APIErrorException
+        # FC.person_group.delete(person_group_id=PERSON_GROUP_ID)
+        # FC.person_group.create(person_group_id=PERSON_GROUP_ID,name=PERSON_GROUP_ID)
+        return
     name_kind = os.listdir(path=auth_dir) # define face tag
-    auth_faces = numpy.empty((len(name_kind),0)) #  auth_face[who][pic of face]
-    PG_persons =numpy.empty(0)
+    auth_faces = [[] for _ in range(len(name_kind))] #  auth_face[who][pic of face]
+    PG_persons = [] #len(name_kind))
     for i, name in zip(range(len(name_kind)), name_kind):
-        PG_persons[i] = FC.person_group_person.create(PERSON_GROUP_ID, name) # make person in PG
-        auth_faces[i] = [f.name for f in os.scandir(Path.joinpath(auth_dir, name)) if f.is_file()]
+        PG_persons.append(FC.person_group_person.create(PERSON_GROUP_ID, name)) # make person in PG
+        auth_faces[i].append([os.path.join(auth_dir, name, f.name) for f in os.scandir(os.path.join(auth_dir, name)) if f.is_file()])
     for i,names in zip(range(len(auth_faces)),auth_faces):
-        for face_file in names :
-            try:
-                # with open("auth.csv", mode="a") as f:
-                #     face_ID = FC.face.detect(os.path.join(auth_dir,aface))
-                #     csvM=csv.writer(f)
-                #     csvM.writerow(aface, face_ID["faceId"])
-                with open(face_file) as ff :
-                    FC.person_group_person.add_face_from_stream(PERSON_GROUP_ID, PG_persons[i], ff)
-            except :
-                return
+        for face_name in names :
+            for face_file in face_name:
+                try:
+                    # with open("auth.csv", mode="a") as f:
+                    #     face_ID = FC.face.detect(os.path.join(auth_dir,aface))
+                    #     csvM=csv.writer(f)
+                    #     csvM.writerow(aface, face_ID["faceId"])
+                    with open(face_file, 'r+b') as ff :
+                        try:
+                            FC.person_group_person.add_face_from_stream(PERSON_GROUP_ID, PG_persons[i].person_id, ff)
+                        except :
+                            print("No face detected in " + face_file)
+                            pass
+                except Exception as e:
+                    FC.person_group.delete(person_group_id=PERSON_GROUP_ID)
+                    print(PG_persons[i])
+                    sys.exit(e)
     FC.person_group.train(PERSON_GROUP_ID)
     while True :
-        training_status = FC.person_group.get_get_training_status(PERSON_GROUP_ID)
+        training_status = FC.person_group.get_training_status(PERSON_GROUP_ID)
         print("Traning Status: {}".format(training_status))
         if training_status.status is TrainingStatusType.succeeded:
             break
