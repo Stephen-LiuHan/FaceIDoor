@@ -35,16 +35,15 @@ def check_dir(face_dir):
     NOW_PIC=LATEST_PIC
     now_files = Path(face_dir)
     if now_files is not None:
-        for file_name in now_files.glob("[0-9][0-9]*.*"):
+        for file_name in now_files.glob("[0-9]*.*"):
             if os.path.splitext(os.path.join(file_name))[-1][1:] in EXTENSIONS:
-                file_num = os.path.splitext(file_name)[0]
+                file_num = os.path.splitext(os.path.basename(file_name))[0]
                 if int(file_num) > LATEST_PIC:
                     LATEST_PIC=int(file_num)
             else:
                 print(os.path.splitext(os.path.join(file_name))[-1][1:])
                 print(file_name)
                 continue
-            print(file_name)
     if NOW_PIC == LATEST_PIC:
         return 0
     else:        
@@ -65,10 +64,14 @@ def Face_Auth(face_dir):
     try:
         with open(img_url, 'r+b') as image:
             face_ids = []
+            results = False
+            print(img_url)
             faces = FC.face.detect_with_stream(image, detection_model="detection_03") # the faces including in pic
-            for face in faces:
-                face_ids.append(face.face_id)
-            results = FC.face.identify(face_ids, PERSON_GROUP_ID) 
+            if faces :
+                for face in faces:
+                    face_ids.append(face.face_id)
+                print(face_ids)
+                results = FC.face.identify(face_ids, PERSON_GROUP_ID) 
             if results :
                 for person in results:
                     if len(person.candidates) > 0:
