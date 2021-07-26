@@ -35,7 +35,7 @@ def check_dir(face_dir):
     NOW_PIC=LATEST_PIC
     now_files = Path(face_dir)
     if now_files is not None:
-        for file_name in now_files.glob("[0-9]+.*"):
+        for file_name in now_files.glob("[0-9][0-9]*.*"):
             if os.path.splitext(os.path.join(file_name))[-1][1:] in EXTENSIONS:
                 file_num = os.path.splitext(file_name)[0]
                 if int(file_num) > LATEST_PIC:
